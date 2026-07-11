@@ -17,6 +17,7 @@ from modules.backup import BackupWindow
 from modules.restore import RestoreWindow
 from modules.stock_ledger import StockLedgerWindow
 from database.company_db import get_company
+from modules.reference_master import ReferenceMaster
 from PySide6.QtWidgets import (
     QWidget,
     QLabel,
@@ -132,6 +133,9 @@ class Dashboard(QWidget):
                 elif text == "Party Master":
                     button.clicked.connect(self.open_party_master)
 
+                elif text == "Reference Master":
+                    button.clicked.connect(self.open_reference_master)
+
                 elif text == "Company Profile":
                     button.clicked.connect(self.open_company_profile)
 
@@ -186,7 +190,8 @@ class Dashboard(QWidget):
             "Masters",
             [
                 "Product Master",
-                "Party Master"
+                "Party Master",
+                "Reference Master"
             ]
         )
 
@@ -296,3 +301,9 @@ class Dashboard(QWidget):
             self.title.setText(company["company_name"])
         else:
             self.title.setText("Company Name")
+
+    def open_reference_master(self):
+
+        self.reference_window = ReferenceMaster()
+
+        self.reference_window.show()
