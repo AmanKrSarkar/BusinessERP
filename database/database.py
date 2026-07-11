@@ -339,6 +339,28 @@ def initialize_database():
 
     """)
 
+    # -----------------------------
+    # Reference Master
+    # -----------------------------
+
+    cursor.execute("""
+
+    CREATE TABLE IF NOT EXISTS reference_master(
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        category TEXT,
+
+        name TEXT,
+
+        status TEXT DEFAULT 'Active',
+
+        created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+    )
+
+    """)
+
     conn.commit()
     conn.close()
 
