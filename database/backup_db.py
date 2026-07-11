@@ -1,7 +1,7 @@
 import shutil
 import os
 
-DB_FILE = "data/business.db"
+from database.database import get_connection
 
 
 def create_backup():

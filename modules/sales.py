@@ -30,7 +30,8 @@ from database.sales_db import (
     save_sales_item,
     fifo_sale,
     get_available_stock,
-    get_first_available_batch
+    get_first_available_batch,
+    get_next_invoice_number
 )
 
 from database.party_db import get_party
@@ -76,6 +77,7 @@ class SalesWindow(QWidget):
 
         lbl_invoice = QLabel("Invoice No")
         self.txt_invoice = QLineEdit()
+        self.txt_invoice.setText(get_next_invoice_number())
 
         lbl_date = QLabel("Invoice Date")
         self.txt_date = QDateEdit()
@@ -177,6 +179,7 @@ class SalesWindow(QWidget):
 
         lbl_round = QLabel("Round Off")
         self.txt_round = QLineEdit("0.00")
+        self.txt_round.setReadOnly(True)
 
         lbl_net = QLabel("Net Amount")
 
@@ -395,10 +398,28 @@ class SalesWindow(QWidget):
         gross_amount = 0.0
 
         self.table.blockSignals(True)
+        
+        product_total = {}
 
         for row in range(self.table.rowCount()):
 
+            product_item = self.table.item(row, 1)
+
+            if not product_item:
+                continue
+
+            product_name = product_item.text().strip()
+
+            if product_name == "":
+                continue
             qty = self.get_float(row, 7)
+            free_qty = self.get_float(row, 8)
+            sold_qty = qty + free_qty
+            product_total.setdefault(product_name, 0)
+
+            product_total[product_name] += sold_qty
+            
+            
             rate = self.get_float(row, 9)
             disc1 = self.get_float(row, 10)
             disc2 = self.get_float(row, 11)
@@ -412,14 +433,20 @@ class SalesWindow(QWidget):
                 continue
 
             # -----------------------------
-            # Taxable
+            # Basic Amount
             # -----------------------------
 
-            taxable = qty * rate
+            basic = qty * rate
+
+            # -----------------------------
+            # Discount
+            # -----------------------------
 
             total_discount = disc1 + disc2
 
-            taxable -= taxable * total_discount / 100
+            discount_amount = basic * total_discount / 100
+
+            taxable = basic - discount_amount
 
             # -----------------------------
             # GST
@@ -427,13 +454,38 @@ class SalesWindow(QWidget):
 
             gst_amount = taxable * gst / 100
 
+            # -----------------------------
+            # Total
+            # -----------------------------
+
             total = taxable + gst_amount
 
             self.set_value(row, 13, taxable)
             self.set_value(row, 14, total)
 
             gross_amount += total
+        for row in range(self.table.rowCount()):
 
+            product_item = self.table.item(row, 1)
+
+            if not product_item:
+                continue
+
+            product_name = product_item.text().strip()
+
+            stock_item = self.table.item(row, 15)
+
+            if not stock_item:
+                continue
+
+            original_stock = stock_item.data(Qt.UserRole)
+
+            if original_stock is None:
+                continue
+
+            remaining = original_stock - product_total.get(product_name, 0)
+
+            stock_item.setText(str(remaining))
         self.table.blockSignals(False)
 
         self.txt_gross.setText(f"{gross_amount:.2f}")
@@ -443,12 +495,13 @@ class SalesWindow(QWidget):
         except:
             other = 0
 
-        try:
-            round_off = float(self.txt_round.text())
-        except:
-            round_off = 0
+        gross = gross_amount + other
 
-        net = gross_amount + other + round_off
+        net = round(gross)
+
+        round_off = net - gross
+
+        self.txt_round.setText(f"{round_off:.2f}")
 
         self.txt_net.setText(f"{net:.2f}")
 
@@ -460,6 +513,7 @@ class SalesWindow(QWidget):
 
         self.txt_customer.clear()
         self.txt_invoice.clear()
+        self.txt_invoice.setText(get_next_invoice_number())
 
         self.txt_date.setDate(QDate.currentDate())
 
@@ -642,10 +696,17 @@ class SalesWindow(QWidget):
                 QTableWidgetItem(str(batch["rate"]))
             )
 
+            stock_item = QTableWidgetItem(str(batch["available_stock"]))
+
+            stock_item.setData(
+                Qt.UserRole,
+                batch["available_stock"]
+            )
+
             self.table.setItem(
                 row,
                 15,
-                QTableWidgetItem(str(batch["available_stock"]))
+                stock_item
             )
 
         self.table.setItem(

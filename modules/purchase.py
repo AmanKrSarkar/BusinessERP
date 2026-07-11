@@ -7,6 +7,8 @@ from PySide6.QtCore import QStringListModel
 from database.product_db import get_product_names
 from PySide6.QtWidgets import QStyledItemDelegate, QLineEdit
 from modules.product_delegate import ProductDelegate
+from database.party_db import get_party_names
+from modules.search_lineedit import SearchLineEdit
 from PySide6.QtWidgets import (
     QWidget,
     QLabel,
@@ -66,7 +68,7 @@ class PurchaseWindow(QWidget):
         header = QGridLayout()
 
         lbl_supplier = QLabel("Supplier")
-        self.txt_supplier = QLineEdit()
+        self.txt_supplier = SearchLineEdit()
 
         lbl_invoice = QLabel("Invoice No")
         self.txt_invoice = QLineEdit()
@@ -104,6 +106,7 @@ class PurchaseWindow(QWidget):
         header.addWidget(self.txt_address,1,5)
 
         self.main_layout.addLayout(header)
+        self.load_party_completer()
 
         # ==========================
         # PRODUCT TABLE
@@ -168,6 +171,7 @@ class PurchaseWindow(QWidget):
 
         lbl_round = QLabel("Round Off")
         self.txt_round = QLineEdit("0.00")
+        self.txt_round.setReadOnly(True)
 
         lbl_net = QLabel("Net Amount")
 
@@ -433,12 +437,13 @@ class PurchaseWindow(QWidget):
         except:
             other = 0
 
-        try:
-            round_off = float(self.txt_round.text())
-        except:
-            round_off = 0
+        gross = gross_amount + other
 
-        net = gross_amount + other + round_off
+        net = round(gross)
+
+        round_off = net - gross
+
+        self.txt_round.setText(f"{round_off:.2f}")
 
         self.txt_net.setText(f"{net:.2f}")
 
@@ -693,3 +698,27 @@ class PurchaseWindow(QWidget):
         self.txt_mobile.setText(party["mobile"] or "")
         self.txt_gstin.setText(party["gstin"] or "")
         self.txt_address.setText(party["address"] or "")
+
+    def load_party_completer(self):
+
+        self.party_model = QStringListModel(get_party_names())
+
+        self.party_completer = QCompleter(self.party_model, self)
+
+        self.party_completer.setMaxVisibleItems(10)
+
+        self.party_completer.setCaseSensitivity(
+            Qt.CaseInsensitive
+        )
+
+        self.party_completer.setFilterMode(
+            Qt.MatchContains
+        )
+
+        self.party_completer.setCompletionMode(
+            QCompleter.PopupCompletion
+        )
+
+        self.txt_supplier.setCompleter(
+            self.party_completer
+        )

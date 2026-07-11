@@ -1,6 +1,6 @@
 import sqlite3
 
-DB_PATH = "data/business.db"
+from database.database import get_connection
 
 
 def get_connection():
@@ -270,3 +270,31 @@ def get_first_available_batch(product_id):
     conn.close()
 
     return row
+
+def get_next_invoice_number():
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT invoice_number
+        FROM sales_bills
+        ORDER BY id DESC
+        LIMIT 1
+    """)
+
+    row = cur.fetchone()
+
+    conn.close()
+
+    if row is None:
+        return "S000001"
+
+    invoice = row["invoice_number"]
+
+    try:
+        number = int(invoice[1:])
+    except:
+        number = 0
+
+    return f"S{number + 1:06d}"

@@ -1,11 +1,4 @@
-import sqlite3
-
-DB_PATH = "data/business.db"
-
-def get_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+from database.database import get_connection
 
 
 def save_company(name,address,mobile,email,gstin):

@@ -1,16 +1,35 @@
 import sqlite3
 import os
+from pathlib import Path
 
-DB_FOLDER = "data"
-DB_NAME = "business.db"
+# ----------------------------------
+# BusinessERP Folder (Documents)
+# ----------------------------------
 
-os.makedirs(DB_FOLDER, exist_ok=True)
+APP_FOLDER = Path.home() / "Documents" / "BusinessERP"
 
-DB_PATH = os.path.join(DB_FOLDER, DB_NAME)
+DATABASE_FOLDER = APP_FOLDER / "Database"
+BACKUP_FOLDER = APP_FOLDER / "Backup"
+INVOICE_FOLDER = APP_FOLDER / "Invoices"
+REPORT_FOLDER = APP_FOLDER / "Reports"
+SETTINGS_FOLDER = APP_FOLDER / "Settings"
+
+# Create folders automatically
+DATABASE_FOLDER.mkdir(parents=True, exist_ok=True)
+BACKUP_FOLDER.mkdir(parents=True, exist_ok=True)
+INVOICE_FOLDER.mkdir(parents=True, exist_ok=True)
+REPORT_FOLDER.mkdir(parents=True, exist_ok=True)
+SETTINGS_FOLDER.mkdir(parents=True, exist_ok=True)
+
+DB_PATH = DATABASE_FOLDER / "business.db"
 
 
 def get_connection():
-    return sqlite3.connect(DB_PATH)
+
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+
+    return conn
 
 
 def initialize_database():
