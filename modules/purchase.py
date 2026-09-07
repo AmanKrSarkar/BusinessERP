@@ -163,6 +163,18 @@ class PurchaseWindow(QWidget):
 
         footer = QGridLayout()
 
+        # ==========================
+        # EXTRA TOTALS
+        # ==========================
+
+        lbl_taxable = QLabel("Taxable Amount")
+        self.txt_taxable = QLineEdit("0.00")
+        self.txt_taxable.setReadOnly(True)
+
+        lbl_discount = QLabel("Total Discount")
+        self.txt_discount = QLineEdit("0.00")
+        self.txt_discount.setReadOnly(True)
+
         lbl_gross = QLabel("Gross Amount")
         self.txt_gross = QLineEdit("0.00")
 
@@ -178,17 +190,23 @@ class PurchaseWindow(QWidget):
         self.txt_net = QLineEdit("0.00")
         self.txt_net.setReadOnly(True)
 
-        footer.addWidget(lbl_gross,0,0)
-        footer.addWidget(self.txt_gross,0,1)
+        footer.addWidget(lbl_taxable,0,0)
+        footer.addWidget(self.txt_taxable,0,1)
 
-        footer.addWidget(lbl_other,0,2)
-        footer.addWidget(self.txt_other,0,3)
+        footer.addWidget(lbl_discount,0,2)
+        footer.addWidget(self.txt_discount,0,3)
 
-        footer.addWidget(lbl_round,0,4)
-        footer.addWidget(self.txt_round,0,5)
+        footer.addWidget(lbl_gross,1,0)
+        footer.addWidget(self.txt_gross,1,1)
 
-        footer.addWidget(lbl_net,1,4)
-        footer.addWidget(self.txt_net,1,5)
+        footer.addWidget(lbl_other,1,2)
+        footer.addWidget(self.txt_other,1,3)
+
+        footer.addWidget(lbl_round,1,4)
+        footer.addWidget(self.txt_round,1,5)
+
+        footer.addWidget(lbl_net,2,4)
+        footer.addWidget(self.txt_net,2,5)
 
         self.main_layout.addLayout(footer)
 
@@ -387,6 +405,8 @@ class PurchaseWindow(QWidget):
     def calculate_bill(self):
 
         gross_amount = 0.0
+        total_taxable = 0.0
+        total_discount = 0.0
 
         self.table.blockSignals(True)
 
@@ -409,11 +429,17 @@ class PurchaseWindow(QWidget):
             # Taxable
             # -----------------------------
 
-            taxable = qty * rate
+            basic = qty * rate
 
-            total_discount = disc1 + disc2
+            discount_percent = disc1 + disc2
 
-            taxable -= taxable * total_discount / 100
+            discount_amount = basic * discount_percent / 100
+
+            taxable = basic - discount_amount
+
+            total_discount += discount_amount
+
+            total_taxable += taxable
 
             # -----------------------------
             # GST
@@ -430,6 +456,10 @@ class PurchaseWindow(QWidget):
 
         self.table.blockSignals(False)
 
+        self.txt_taxable.setText(f"{total_taxable:.2f}")
+
+        self.txt_discount.setText(f"{total_discount:.2f}")
+        
         self.txt_gross.setText(f"{gross_amount:.2f}")
 
         try:
